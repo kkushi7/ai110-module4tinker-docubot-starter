@@ -9,6 +9,8 @@ Core DocuBot class responsible for:
 
 import os
 import glob
+import re
+
 
 class DocuBot:
     def __init__(self, docs_folder="docs", llm_client=None):
@@ -24,6 +26,12 @@ class DocuBot:
 
         # Build a retrieval index (implemented in Phase 1)
         self.index = self.build_index(self.documents)
+
+    def _tokenize(self, text):
+        """
+        Lowercase text and split into simple word tokens.
+        """
+        return re.findall(r"\b\w+\b", text.lower())
 
     # -----------------------------------------------------------
     # Document Loading
@@ -64,7 +72,10 @@ class DocuBot:
         ignore punctuation if needed.
         """
         index = {}
-        # TODO: implement simple indexing
+        for filename, text in documents:
+            seen_tokens = set(self._tokenize(text))
+            for token in seen_tokens:
+                index.setdefault(token, []).append(filename)
         return index
 
     # -----------------------------------------------------------
@@ -81,8 +92,16 @@ class DocuBot:
         - Count how many appear in the text
         - Return the count as the score
         """
-        # TODO: implement scoring
-        return 0
+        query_tokens = self._tokenize(query)
+        if not query_tokens:
+            return 0
+
+        text_tokens = set(self._tokenize(text))
+        score = 0
+        for token in query_tokens:
+            if token in text_tokens:
+                score += 1
+        return score
 
     def retrieve(self, query, top_k=3):
         """
@@ -91,9 +110,26 @@ class DocuBot:
 
         Return a list of (filename, text) sorted by score descending.
         """
+        query_tokens = self._tokenize(query)
+        candidate_filenames = set()
+
+        for token in query_tokens:
+            candidate_filenames.update(self.index.get(token, []))
+
+        if not candidate_filenames:
+            candidate_filenames = {filename for filename, _ in self.documents}
+
         results = []
-        # TODO: implement retrieval logic
-        return results[:top_k]
+        for filename, text in self.documents:
+            if filename not in candidate_filenames:
+                continue
+
+            score = self.score_document(query, text)
+            if score > 0:
+                results.append((score, filename, text))
+
+        results.sort(key=lambda item: (-item[0], item[1]))
+        return [(filename, text) for _, filename, text in results[:top_k]]
 
     # -----------------------------------------------------------
     # Answering Modes

@@ -80,3 +80,6 @@ You will primarily work in:
 - Python 3.9+
 - A Gemini API key for LLM features (only needed for modes 1 and 3)
 - No database, no server setup, no external services besides LLM calls
+
+Summary:
+The key idea students need to understand is that retrieval quality drives answer quality, especially in RAG systems where the model can only be as good as the context it receives. Students may struggle with choosing chunk size, token filtering, and score thresholds, because fixing small changes can cause big shifts in which evidence is retrieved. AI was helpful for baseline indexing, scoring, and testing loops so students could work faster on retrieval behavior. AI was misleading when it produced confident but generic responses in naive mode, or when RAG refusals looked like model failure even though the real issue was weak retrieved context. A useful way to guide students would be to ask them to compare the top retrieved snippets for the same query across modes and explain which exact lines support, or fail to support a claim. This will help them with evidence based reasoning and debugging habits.

@@ -24,8 +24,11 @@ class DocuBot:
         # Load documents into memory
         self.documents = self.load_documents()  # List of (filename, text)
 
+        # Break documents into smaller retrieval units.
+        self.sections = self.build_sections(self.documents)
+
         # Build a retrieval index (implemented in Phase 1)
-        self.index = self.build_index(self.documents)
+        self.index = self.build_index(self.sections)
 
     def _tokenize(self, text):
         """
@@ -56,26 +59,54 @@ class DocuBot:
     # Index Construction (Phase 1)
     # -----------------------------------------------------------
 
-    def build_index(self, documents):
+    def build_sections(self, documents):
         """
-        TODO (Phase 1):
-        Build a tiny inverted index mapping lowercase words to the documents
-        they appear in.
+        Split each document into smaller sections so retrieval can return
+        focused snippets instead of entire files.
+
+        Sections are based on blank-line separated blocks, with markdown
+        headings attached to the block that follows them for context.
+        """
+        sections = []
+
+        for filename, text in documents:
+            blocks = [block.strip()
+                      for block in re.split(r"\n\s*\n", text) if block.strip()]
+            current_heading = ""
+
+            for block in blocks:
+                if block.startswith("#"):
+                    current_heading = block
+                    continue
+
+                if current_heading:
+                    section_text = f"{current_heading}\n\n{block}"
+                else:
+                    section_text = block
+
+                sections.append((filename, section_text))
+
+        return sections
+
+    def build_index(self, sections):
+        """
+        Build a tiny inverted index mapping lowercase words to the section
+        numbers where they appear.
 
         Example structure:
         {
-            "token": ["AUTH.md", "API_REFERENCE.md"],
-            "database": ["DATABASE.md"]
+            "token": [0, 4],
+            "database": [7]
         }
 
         Keep this simple: split on whitespace, lowercase tokens,
         ignore punctuation if needed.
         """
         index = {}
-        for filename, text in documents:
+        for section_id, (_, text) in enumerate(sections):
             seen_tokens = set(self._tokenize(text))
             for token in seen_tokens:
-                index.setdefault(token, []).append(filename)
+                index.setdefault(token, []).append(section_id)
         return index
 
     # -----------------------------------------------------------
@@ -96,11 +127,12 @@ class DocuBot:
         if not query_tokens:
             return 0
 
-        text_tokens = set(self._tokenize(text))
+        text_tokens = self._tokenize(text)
+        unique_tokens = set(text_tokens)
         score = 0
         for token in query_tokens:
-            if token in text_tokens:
-                score += 1
+            if token in unique_tokens:
+                score += text_tokens.count(token)
         return score
 
     def retrieve(self, query, top_k=3):
@@ -111,17 +143,17 @@ class DocuBot:
         Return a list of (filename, text) sorted by score descending.
         """
         query_tokens = self._tokenize(query)
-        candidate_filenames = set()
+        candidate_section_ids = set()
 
         for token in query_tokens:
-            candidate_filenames.update(self.index.get(token, []))
+            candidate_section_ids.update(self.index.get(token, []))
 
-        if not candidate_filenames:
-            candidate_filenames = {filename for filename, _ in self.documents}
+        if not candidate_section_ids:
+            candidate_section_ids = set(range(len(self.sections)))
 
         results = []
-        for filename, text in self.documents:
-            if filename not in candidate_filenames:
+        for section_id, (filename, text) in enumerate(self.sections):
+            if section_id not in candidate_section_ids:
                 continue
 
             score = self.score_document(query, text)

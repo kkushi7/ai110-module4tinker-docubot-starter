@@ -83,7 +83,7 @@ You can reuse or adapt the queries from `dataset.py`.
 - When is retrieval only clearly better?  
 - When is RAG clearly better than both?
 
-> _Your answer here._
+> Retrieval worked the best as it gave concise answer when asking questions, like where is the auth token generated. RAG hit a guardrail saying I don't know as it has stricter rules, and if its confidence is lower, it will refuse to answer. The naive LLM gave a more in depth answer, explaining authentication and its tokens and servers, as well as giving a summary of its answer. From these results, I find retrieval the best. 
 
 ---
 
@@ -96,19 +96,19 @@ For each one, say:
 - What did the system do?  
 - What should have happened instead?
 
-> _Failure case 1 here._
+> RAG failed at giving an answer to where is the auth token generated, due to its stricter rules.
 
 > _Failure case 2 here._
 
 **When should DocuBot say “I do not know based on the docs I have”?**  
 Give at least two specific situations.
 
-> _Your answer here._
+> I believe if the question is too vague, or if the information is not within retrieval, are two scenarios when it should say I do not know. 
 
 **What guardrails did you implement?**  
 Examples: refusal rules, thresholds, limits on snippets, safe defaults.
 
-> _Your answer here._
+> I implemented refusal rules, token level evidence filtering, and explicit useful context threshold to know when a question is vague or not. 
 
 ---
 

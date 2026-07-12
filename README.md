@@ -83,3 +83,7 @@ You will primarily work in:
 
 Summary:
 The key idea students need to understand is that retrieval quality drives answer quality, especially in RAG systems where the model can only be as good as the context it receives. Students may struggle with choosing chunk size, token filtering, and score thresholds, because fixing small changes can cause big shifts in which evidence is retrieved. AI was helpful for baseline indexing, scoring, and testing loops so students could work faster on retrieval behavior. AI was misleading when it produced confident but generic responses in naive mode, or when RAG refusals looked like model failure even though the real issue was weak retrieved context. A useful way to guide students would be to ask them to compare the top retrieved snippets for the same query across modes and explain which exact lines support, or fail to support a claim. This will help them with evidence based reasoning and debugging habits.
+
+Questions:
+For the same user query, how does the retrieved info differ between the retrieval and RAG mode?
+If RAG gives a weak answer, where do you think the root cause is from? Retrieval or prompting?
